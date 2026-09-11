@@ -1,0 +1,17 @@
+{
+  "name": "takecourt",
+  "version": "1.0.0",
+  "description": "TakeCourt — put your take on trial, community stakes BOT to Crown or Bonk. Pari-mutuel payout.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network botchain_testnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network botchain"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.0"
+  },
+  "dependencies": { "@openzeppelin/contracts": "^5.0.0" }
+}

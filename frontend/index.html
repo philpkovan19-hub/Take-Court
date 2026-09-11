@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TAKECOURT!! — Put Your Take On Trial</title>
+<meta name="description" content="Every take goes to court. Stake BOT to Crown or Bonk. Winners split the losers' pool." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Bungee&family=Rubik:wght@400;500;700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
+<style>
+  :root {
+    --pop-red: #ff3355;
+    --pop-yellow: #ffde3f;
+    --pop-blue: #2b7fff;
+    --pop-pink: #ff6bd6;
+    --pop-cream: #fff8dc;
+    --pop-green: #2ec775;
+    --ink: #0a0a0a;
+    --off: #f8f4e6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--off);
+    color: var(--ink);
+    font-family: 'Rubik', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle, var(--ink) 1.5px, transparent 1.5px),
+      radial-gradient(circle, var(--ink) 1.5px, transparent 1.5px);
+    background-size: 24px 24px, 24px 24px;
+    background-position: 0 0, 12px 12px;
+    background-color: var(--off);
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: var(--off);
+    opacity: 0.9;
+    z-index: -1;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 32px;
+    background: var(--pop-yellow);
+    border-bottom: 5px solid var(--ink);
+    box-shadow: 0 4px 0 var(--ink);
+  }
+  .brand {
+    font-family: 'Bangers', cursive;
+    font-size: 40px;
+    letter-spacing: 3px;
+    color: var(--ink);
+    text-shadow: 3px 3px 0 var(--pop-red);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .brand-gavel { font-size: 34px; transform: rotate(-15deg); }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .net-badge {
+    padding: 8px 16px; background: var(--pop-cream);
+    border: 3px solid var(--ink); border-radius: 20px;
+    font-family: 'Rubik', sans-serif; font-weight: 700; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 1px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .connect-btn {
+    padding: 12px 24px;
+    background: var(--pop-red); color: white;
+    border: 3px solid var(--ink); border-radius: 6px;
+    font-family: 'Bangers', cursive; font-size: 22px;
+    letter-spacing: 2px; cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .connect-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+  .connect-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .connect-btn.connected { background: var(--pop-green); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 60px 32px 100px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .starburst {
+    position: absolute;
+    background: var(--pop-yellow);
+    width: 220px; height: 220px;
+    top: 40px; left: 8%;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    display: grid; place-items: center;
+    font-family: 'Bangers', cursive; font-size: 36px;
+    color: var(--ink);
+    transform: rotate(-15deg);
+    z-index: 1;
+  }
+  .starburst.right {
+    left: auto; right: 8%; top: 100px;
+    background: var(--pop-pink);
+    width: 180px; height: 180px;
+    transform: rotate(20deg);
+    font-size: 30px;
+  }
+  .hero-content { position: relative; z-index: 2; }
+  .hero h1 {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(60px, 12vw, 160px);
+    line-height: 0.9;
+    letter-spacing: 4px;
+    color: var(--ink);
+    text-shadow: 6px 6px 0 var(--pop-red), 12px 12px 0 var(--pop-blue);
+    margin-bottom: 20px;
+  }
+  .hero h1 .pop { color: var(--pop-red); }
+  .hero h1 .yellow-bg {
+    display: inline-block;
+    background: var(--pop-yellow);
+    padding: 0 20px;
+    border: 4px solid var(--ink);
+    text-shadow: 4px 4px 0 var(--pop-red);
+    transform: rotate(-2deg);
+  }
+  .hero p {
+    font-family: 'Rubik', sans-serif;
+    font-size: clamp(18px, 2vw, 24px); font-weight: 500;
+    max-width: 700px; margin: 30px auto 40px;
+    line-height: 1.4;
+  }
+  .cta-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+  .cta {
+    padding: 18px 40px;
+    font-family: 'Bangers', cursive; font-size: 28px; letter-spacing: 2px;
+    background: var(--pop-red); color: white;
+    border: 4px solid var(--ink); border-radius: 8px;
+    cursor: pointer; text-decoration: none;
+    box-shadow: 6px 6px 0 var(--ink);
+    transition: all .1s;
+  }
+  .cta:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
+  .cta.alt { background: var(--pop-blue); }
+  .cta.yellow { background: var(--pop-yellow); color: var(--ink); }
+
+  /* ---------- Speech bubble ---------- */
+  .speech {
+    max-width: 700px; margin: 60px auto 0;
+    background: white;
+    border: 4px solid var(--ink);
+    padding: 30px 40px;
+    position: relative;
+    box-shadow: 8px 8px 0 var(--ink);
+    border-radius: 30px;
+  }
+  .speech::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: 60px;
+    width: 40px; height: 40px;
+    background: white;
+    border-right: 4px solid var(--ink);
+    border-bottom: 4px solid var(--ink);
+    transform: rotate(45deg);
+  }
+  .speech .quote {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 26px; line-height: 1.3;
+    color: var(--ink);
+  }
+  .speech .attrib { margin-top: 12px; font-weight: 700; color: var(--pop-red); font-family: 'Rubik'; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+
+  /* ---------- How it works ---------- */
+  .how {
+    padding: 100px 32px 80px;
+    background: var(--pop-blue);
+    border-top: 5px solid var(--ink);
+    border-bottom: 5px solid var(--ink);
+    position: relative;
+  }
+  .how::before, .how::after {
+    content: ''; position: absolute; left: 0; right: 0;
+    height: 20px;
+    background: repeating-linear-gradient(90deg, var(--pop-yellow) 0 30px, var(--ink) 30px 40px);
+  }
+  .how::before { top: 0; }
+  .how::after { bottom: 0; }
+  .how-title {
+    text-align: center;
+    font-family: 'Bangers', cursive;
+    font-size: clamp(48px, 8vw, 90px);
+    color: white;
+    text-shadow: 5px 5px 0 var(--ink);
+    letter-spacing: 4px;
+    margin-bottom: 60px;
+  }
+  .steps {
+    max-width: 1100px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 30px;
+  }
+  .step {
+    background: white;
+    border: 4px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 24px;
+    position: relative;
+    min-height: 250px;
+  }
+  .step:nth-child(1) { transform: rotate(-2deg); }
+  .step:nth-child(2) { transform: rotate(1deg); }
+  .step:nth-child(3) { transform: rotate(-1deg); }
+  .step:nth-child(4) { transform: rotate(2deg); }
+  .step-num {
+    position: absolute; top: -20px; left: -20px;
+    width: 60px; height: 60px;
+    background: var(--pop-yellow);
+    border: 4px solid var(--ink);
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: 'Bangers', cursive; font-size: 34px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .step h3 { font-family: 'Bangers', cursive; font-size: 30px; letter-spacing: 1px; margin: 20px 0 12px; }
+  .step p { font-size: 15px; line-height: 1.4; font-weight: 500; }
+
+  /* ---------- Dashboard ---------- */
+  .app { padding: 60px 32px; max-width: 1200px; margin: 0 auto; }
+  .app-title {
+    text-align: center;
+    font-family: 'Bangers', cursive; font-size: clamp(48px, 7vw, 80px); letter-spacing: 4px;
+    color: var(--ink);
+    text-shadow: 4px 4px 0 var(--pop-yellow), 8px 8px 0 var(--pop-red);
+    margin-bottom: 40px;
+  }
+
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 40px;
+  }
+  .stat {
+    background: white;
+    border: 4px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 20px; text-align: center;
+  }
+  .stat:nth-child(1) { background: var(--pop-yellow); }
+  .stat:nth-child(2) { background: var(--pop-pink); }
+  .stat:nth-child(3) { background: var(--pop-green); color: white; }
+  .stat:nth-child(4) { background: var(--pop-blue); color: white; }
+  .stat-label { font-family: 'Rubik'; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
+  .stat-value { font-family: 'Bangers', cursive; font-size: 40px; letter-spacing: 2px; margin-top: 6px; }
+
+  .tabs { display: flex; gap: 12px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
+  .tab {
+    padding: 12px 24px;
+    background: white; border: 3px solid var(--ink); border-radius: 8px;
+    font-family: 'Bangers', cursive; font-size: 22px; letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--ink);
+    transition: all .1s;
+  }
+  .tab:hover { transform: translate(-1px, -1px); }
+  .tab.active { background: var(--pop-red); color: white; transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .file-form {
+    max-width: 640px; margin: 0 auto;
+    background: var(--pop-cream);
+    border: 4px solid var(--ink);
+    padding: 30px;
+    box-shadow: 8px 8px 0 var(--ink);
+    transform: rotate(-1deg);
+  }
+  .form-row { margin-bottom: 20px; }
+  .form-row label {
+    display: block;
+    font-family: 'Bangers', cursive; font-size: 22px; letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .form-row input, .form-row textarea, .form-row select {
+    width: 100%;
+    padding: 14px 16px;
+    background: white; border: 3px solid var(--ink);
+    font-family: 'Rubik'; font-weight: 500; font-size: 17px;
+    outline: none;
+  }
+  .form-row input:focus, .form-row textarea:focus, .form-row select:focus { background: var(--pop-yellow); }
+  .form-row textarea { resize: vertical; min-height: 90px; }
+  .btn {
+    padding: 14px 30px;
+    background: var(--pop-red); color: white;
+    border: 3px solid var(--ink); border-radius: 8px;
+    font-family: 'Bangers', cursive; font-size: 24px; letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow: 5px 5px 0 var(--ink);
+    transition: all .1s;
+  }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+  .btn.crown { background: var(--pop-yellow); color: var(--ink); }
+  .btn.bonk { background: var(--pop-blue); }
+  .btn.green { background: var(--pop-green); }
+  .btn.small { padding: 6px 14px; font-size: 16px; box-shadow: 3px 3px 0 var(--ink); }
+
+  /* Trial cards */
+  .trials { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+  .trial {
+    background: white;
+    border: 4px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 24px;
+    position: relative;
+  }
+  .trial-id {
+    position: absolute; top: -14px; right: -14px;
+    background: var(--pop-red); color: white;
+    padding: 6px 14px; border: 3px solid var(--ink);
+    font-family: 'Bangers', cursive; font-size: 16px; letter-spacing: 1px;
+    transform: rotate(6deg);
+  }
+  .trial-take {
+    font-family: 'Permanent Marker', cursive;
+    font-size: 20px; line-height: 1.3;
+    color: var(--ink);
+    margin: 6px 0 16px;
+    padding: 16px;
+    background: var(--pop-cream);
+    border: 3px dashed var(--ink);
+    min-height: 100px;
+  }
+  .verdict-tag {
+    display: inline-block; padding: 4px 12px;
+    font-family: 'Bangers', cursive; font-size: 16px; letter-spacing: 2px;
+    border: 3px solid var(--ink);
+    margin-bottom: 10px;
+  }
+  .v-pending { background: var(--pop-yellow); }
+  .v-crowned { background: var(--pop-green); color: white; }
+  .v-bonked { background: var(--pop-blue); color: white; }
+  .v-tied, .v-cancelled { background: #ccc; }
+
+  .pool-bar {
+    display: flex; margin: 12px 0;
+    height: 40px;
+    border: 3px solid var(--ink);
+    font-family: 'Bangers', cursive; font-size: 18px; letter-spacing: 1px;
+    color: white;
+    overflow: hidden;
+  }
+  .pool-crown { background: var(--pop-green); display: grid; place-items: center; transition: flex .3s; }
+  .pool-bonk { background: var(--pop-red); display: grid; place-items: center; transition: flex .3s; }
+  .pool-empty { flex: 1; background: #eee; color: var(--ink); display: grid; place-items: center; font-weight: 700; }
+  .trial-meta { font-family: 'Rubik'; font-size: 13px; font-weight: 500; color: #555; margin: 12px 0; }
+  .trial-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+  .empty {
+    grid-column: 1/-1;
+    text-align: center; padding: 80px 20px;
+    font-family: 'Bangers', cursive; font-size: 36px; letter-spacing: 3px;
+    color: var(--ink); opacity: 0.5;
+  }
+
+  #toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    padding: 14px 28px;
+    background: var(--pop-yellow);
+    border: 4px solid var(--ink); border-radius: 12px;
+    box-shadow: 6px 6px 0 var(--ink);
+    font-family: 'Bangers', cursive; font-size: 22px; letter-spacing: 2px;
+    z-index: 1000; opacity: 0; pointer-events: none;
+    transition: opacity .3s, transform .3s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+  #toast.err { background: var(--pop-red); color: white; }
+
+  footer {
+    padding: 30px 20px;
+    background: var(--ink);
+    color: var(--pop-yellow);
+    text-align: center;
+    font-family: 'Bangers', cursive;
+    font-size: 20px; letter-spacing: 3px;
+    border-top: 5px solid var(--pop-red);
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-gavel">⚖️</span>TAKECOURT!!</div>
+  <div class="topbar-right">
+    <span class="net-badge" id="netBadge">OFFLINE</span>
+    <button class="connect-btn" id="connectBtn" onclick="connectWallet()">Connect!</button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="starburst">WOW!</div>
+  <div class="starburst right">BONK!</div>
+  <div class="hero-content">
+    <h1>PUT<br/>YOUR TAKE<br/><span class="yellow-bg"><span class="pop">ON TRIAL!</span></span></h1>
+    <p>File a hot take. Set the trial clock. The community stakes BOT to <b>CROWN</b> it or <b>BONK</b> it. When time's up, the winning side splits the losers' pool. No juries. No judges. Just the crowd.</p>
+    <div class="cta-row">
+      <a href="#app" class="cta">FILE A TAKE →</a>
+      <a href="#app" class="cta alt">SEE TRIALS</a>
+    </div>
+  </div>
+
+  <div class="speech">
+    <div class="quote">"Cilantro tastes like soap AND I have the receipts. Fight me. See you in court."</div>
+    <div class="attrib">— A TAKE ABOUT TO GET BONKED</div>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <h2 class="how-title">HOW IT WORKS</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>FILE!</h3>
+      <p>Post your take (up to 512 chars) with a small filing fee. Set the trial length (1 hour to 30 days).</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>STAKE!</h3>
+      <p>Anyone can stake BOT to Crown (agree) or Bonk (disagree). Bigger stakes count for more. You can't switch sides.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>VERDICT!</h3>
+      <p>When time's up, anyone can trigger adjudication. Whichever pool is bigger wins. Tie = full refund for all.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>CASH IN!</h3>
+      <p>Winners claim: get your stake back + a proportional slice of the losing pool (minus 3% platform fee). Losers get nothing.</p>
+    </div>
+  </div>
+</section>
+
+<main class="app" id="app">
+  <h2 class="app-title">THE COURT</h2>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-label">Takes Filed</div><div class="stat-value" id="statCount">—</div></div>
+    <div class="stat"><div class="stat-label">Your Takes</div><div class="stat-value" id="statMine">—</div></div>
+    <div class="stat"><div class="stat-label">Filing Fee</div><div class="stat-value" id="statFee">—</div></div>
+    <div class="stat"><div class="stat-label">Net</div><div class="stat-value" id="statNet" style="font-size:22px;">—</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-panel="all">ALL TRIALS</div>
+    <div class="tab" data-panel="file">FILE A TAKE</div>
+    <div class="tab" data-panel="mine">MY TAKES</div>
+  </div>
+
+  <div class="panel active" id="panel-all">
+    <div class="trials" id="allTrials"><div class="empty">◈ DEPLOY CONTRACT TO SEE TRIALS ◈</div></div>
+  </div>
+
+  <div class="panel" id="panel-file">
+    <form class="file-form" onsubmit="event.preventDefault(); fileTake();">
+      <div class="form-row">
+        <label>Your take</label>
+        <textarea id="tContent" placeholder="Type your hottest take here…" maxlength="512" required></textarea>
+      </div>
+      <div class="form-row">
+        <label>Trial length</label>
+        <select id="tDur">
+          <option value="3600">1 hour</option>
+          <option value="21600">6 hours</option>
+          <option value="86400" selected>1 day</option>
+          <option value="259200">3 days</option>
+          <option value="604800">7 days</option>
+        </select>
+      </div>
+      <button class="btn" type="submit">FILE IT! ⚖️</button>
+    </form>
+  </div>
+
+  <div class="panel" id="panel-mine">
+    <div class="trials" id="mineTrials"><div class="empty">◈ CONNECT WALLET TO SEE YOUR TAKES ◈</div></div>
+  </div>
+</main>
+
+<footer>NO JUDGES. NO JURIES. JUST THE CROWD. — TAKECOURT ON BOT CHAIN</footer>
+
+<div id="toast"></div>
+
+<script>
+const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; // <-- replace after deploy
+const NETWORK = {
+  chainId: "0x3C8",
+  chainName: "BOT Chain Testnet",
+  nativeCurrency: { name: "BOT", symbol: "BOT", decimals: 18 },
+  rpcUrls: ["https://rpc.bohr.life"],
+  blockExplorerUrls: ["https://scan.bohr.life"],
+};
+const ABI = [
+  "function fileTake(string content, uint256 durationSecs) payable returns (uint256)",
+  "function voteCrown(uint256 id) payable",
+  "function voteBonk(uint256 id) payable",
+  "function adjudicate(uint256 id)",
+  "function claim(uint256 id)",
+  "function getTake(uint256 id) view returns (tuple(uint256 id, address author, string content, uint256 filedAt, uint256 votingEndsAt, uint256 crownPool, uint256 bonkPool, uint8 verdict, bool distributed))",
+  "function getVote(uint256 id, address who) view returns (tuple(uint256 amount, bool isCrown, bool claimed))",
+  "function getRecent(uint256 limit) view returns (tuple(uint256 id, address author, string content, uint256 filedAt, uint256 votingEndsAt, uint256 crownPool, uint256 bonkPool, uint8 verdict, bool distributed)[])",
+  "function getTakesByAuthor(address who) view returns (uint256[])",
+  "function isVotingOpen(uint256 id) view returns (bool)",
+  "function takeCount() view returns (uint256)",
+  "function filingFee() view returns (uint256)"
+];
+const VERDICT = ["PENDING","CROWNED","BONKED","TIED","CANCELLED"];
+
+let provider, signer, contract, account;
+const ZERO = "0x0000000000000000000000000000000000000000";
+
+function toast(m,e){ const t=document.getElementById('toast'); t.textContent=m; t.classList.toggle('err',!!e); t.classList.add('show'); clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),3800); }
+function short(a){ return a? a.slice(0,6)+"…"+a.slice(-4):"—"; }
+function fmtBot(w){ try { return Number(ethers.formatEther(w)).toFixed(3); } catch { return "0"; } }
+function timeLeft(ts){ const s=Number(ts)-Math.floor(Date.now()/1000); if(s<=0)return "ENDED"; if(s<3600)return Math.floor(s/60)+"m"; if(s<86400)return Math.floor(s/3600)+"h"; return Math.floor(s/86400)+"d"; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function connectWallet(){
+  if (!window.ethereum) { toast("INSTALL METAMASK!", true); return; }
+  try {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    await window.ethereum.request({ method: "eth_requestAccounts" });
+    const net = await provider.getNetwork();
+    if ("0x"+net.chainId.toString(16) !== NETWORK.chainId) {
+      try { await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{chainId:NETWORK.chainId}] }); }
+      catch (e) { if (e.code===4902) await window.ethereum.request({ method: "wallet_addEthereumChain", params: [NETWORK] }); else throw e; }
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    signer = await provider.getSigner();
+    account = await signer.getAddress();
+    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    const btn = document.getElementById('connectBtn');
+    btn.textContent = short(account); btn.classList.add('connected');
+    document.getElementById('netBadge').textContent = NETWORK.chainName;
+    toast("CONNECTED!");
+    refreshAll();
+  } catch (e) { console.error(e); toast(e.message||"FAILED", true); }
+}
+
+async function refreshAll(){
+  document.getElementById('statNet').textContent = NETWORK.chainName.replace('BOT Chain ','').toUpperCase();
+  if (CONTRACT_ADDRESS===ZERO || !contract) return;
+  try {
+    const [count, fee] = await Promise.all([contract.takeCount(), contract.filingFee()]);
+    document.getElementById('statCount').textContent = count.toString();
+    document.getElementById('statFee').textContent = fmtBot(fee)+"B";
+    if (account) {
+      const mine = await contract.getTakesByAuthor(account);
+      document.getElementById('statMine').textContent = mine.length.toString();
+      loadMine();
+    }
+    loadAll();
+  } catch(e) { console.error(e); }
+}
+
+async function loadAll(){
+  const grid = document.getElementById('allTrials');
+  if (CONTRACT_ADDRESS===ZERO||!contract){ grid.innerHTML='<div class="empty">◈ DEPLOY CONTRACT ◈</div>'; return; }
+  try {
+    const takes = await contract.getRecent(24);
+    if (takes.length===0){ grid.innerHTML='<div class="empty">◈ NO TAKES YET — FILE ONE! ◈</div>'; return; }
+    const votes = account ? await Promise.all(takes.map(t => contract.getVote(t.id, account))) : [];
+    grid.innerHTML = takes.map((t,i)=>trialCard(t, votes[i])).join('');
+  } catch(e){ console.error(e); }
+}
+
+async function loadMine(){
+  const grid = document.getElementById('mineTrials');
+  if (!account||!contract){ grid.innerHTML='<div class="empty">◈ CONNECT WALLET ◈</div>'; return; }
+  try {
+    const ids = await contract.getTakesByAuthor(account);
+    if (ids.length===0){ grid.innerHTML='<div class="empty">◈ YOU HAVEN\'T FILED ANY YET ◈</div>'; return; }
+    const takes = await Promise.all(ids.map(id => contract.getTake(id)));
+    const votes = await Promise.all(takes.map(t => contract.getVote(t.id, account)));
+    grid.innerHTML = takes.reverse().map((t,i)=>trialCard(t, votes[votes.length-1-i])).join('');
+  } catch(e){ console.error(e); }
+}
+
+function trialCard(t, myVote){
+  const v = Number(t.verdict);
+  const verdictClass = ['v-pending','v-crowned','v-bonked','v-tied','v-cancelled'][v];
+  const total = t.crownPool + t.bonkPool;
+  const cPct = total>0n ? Number((t.crownPool*100n)/total) : 0;
+  const bPct = total>0n ? Number((t.bonkPool*100n)/total) : 0;
+  const votingOpen = v===0 && Number(t.votingEndsAt) > Math.floor(Date.now()/1000);
+  const canAdjudicate = v===0 && Number(t.votingEndsAt) <= Math.floor(Date.now()/1000);
+  const canClaim = v!==0 && myVote && myVote.amount>0n && !myVote.claimed;
+
+  return `<div class="trial">
+    <div class="trial-id">#${t.id}</div>
+    <span class="verdict-tag ${verdictClass}">${VERDICT[v]}${votingOpen?' · '+timeLeft(t.votingEndsAt)+' LEFT':''}</span>
+    <div class="trial-take">${escapeHtml(t.content)}</div>
+    ${total>0n ? `<div class="pool-bar">
+      ${cPct>0?`<div class="pool-crown" style="flex:${cPct}">👑 ${cPct}%</div>`:''}
+      ${bPct>0?`<div class="pool-bonk" style="flex:${bPct}">🔨 ${bPct}%</div>`:''}
+    </div>` : `<div class="pool-bar"><div class="pool-empty">— NO VOTES YET —</div></div>`}
+    <div class="trial-meta">
+      by ${short(t.author)} · CROWN ${fmtBot(t.crownPool)}B · BONK ${fmtBot(t.bonkPool)}B
+      ${myVote && myVote.amount>0n ? ` · YOU: ${myVote.isCrown?'👑':'🔨'} ${fmtBot(myVote.amount)}B` : ''}
+    </div>
+    <div class="trial-actions">
+      ${votingOpen ? `<button class="btn small crown" onclick="votePrompt(${t.id}, true)">👑 CROWN</button>
+                    <button class="btn small bonk" onclick="votePrompt(${t.id}, false)">🔨 BONK</button>` : ''}
+      ${canAdjudicate ? `<button class="btn small green" onclick="adjudicate(${t.id})">⚖️ ADJUDICATE</button>` : ''}
+      ${canClaim ? `<button class="btn small green" onclick="claim(${t.id})">💰 CLAIM</button>` : ''}
+    </div>
+  </div>`;
+}
+
+async function fileTake(){
+  if (!contract){ toast("CONNECT FIRST!", true); return; }
+  const content = document.getElementById('tContent').value.trim();
+  const dur = parseInt(document.getElementById('tDur').value);
+  if (!content) return;
+  try {
+    const fee = await contract.filingFee();
+    toast("FILING…");
+    const tx = await contract.fileTake(content, dur, { value: fee });
+    await tx.wait();
+    toast("FILED! ⚖️");
+    document.getElementById('tContent').value = '';
+    refreshAll();
+  } catch(e){ console.error(e); toast(e.reason||e.message||"FAILED", true); }
+}
+
+async function votePrompt(id, isCrown){
+  const amt = prompt(`Stake how much BOT to ${isCrown?'CROWN 👑':'BONK 🔨'}?`, "0.1");
+  if (!amt) return;
+  try {
+    toast("STAKING…");
+    const fn = isCrown ? contract.voteCrown : contract.voteBonk;
+    const tx = await fn(id, { value: ethers.parseEther(amt) });
+    await tx.wait();
+    toast(isCrown?"CROWNED! 👑":"BONKED! 🔨");
+    refreshAll();
+  } catch(e){ toast(e.reason||e.message||"FAILED", true); }
+}
+
+async function adjudicate(id){
+  try {
+    toast("ADJUDICATING…");
+    const tx = await contract.adjudicate(id);
+    await tx.wait();
+    toast("VERDICT IN!");
+    refreshAll();
+  } catch(e){ toast(e.reason||e.message||"FAILED", true); }
+}
+
+async function claim(id){
+  try {
+    toast("CLAIMING…");
+    const tx = await contract.claim(id);
+    await tx.wait();
+    toast("CLAIMED! 💰");
+    refreshAll();
+  } catch(e){ toast(e.reason||e.message||"FAILED", true); }
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.panel).classList.add('active');
+  });
+});
+
+window.addEventListener('load', ()=>{
+  document.getElementById('statNet').textContent = NETWORK.chainName.replace('BOT Chain ','').toUpperCase();
+  if (window.ethereum){
+    window.ethereum.on?.('accountsChanged', ()=>location.reload());
+    window.ethereum.on?.('chainChanged', ()=>location.reload());
+  }
+  refreshAll();
+});
+</script>
+</body>
+</html>
